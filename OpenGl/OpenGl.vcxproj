@@ -27,6 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Header\file.h" />
+    <ClInclude Include="src\Header\kbEvent.h" />
     <ClInclude Include="src\Header\openGl.h" />
     <ClInclude Include="src\Header\stb_image.h" />
   </ItemGroup>
@@ -34,7 +35,9 @@
     <None Include="src\Shaders\main.glsl" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="src\Textures\666.png" />
     <Image Include="src\Textures\sample.jpg" />
+    <Image Include="src\Textures\test.jpg" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

@@ -6,6 +6,10 @@
 #include <cstring>
 #include <system_error> // 用于获取系统错误信息
 
+//#define arrLength(arr) (sizeof(arr) / sizeof(arr[0]))
+
+
+
 void readStringFromFile(const char* filename, std::string* str) {
 	std::ifstream file(filename);
 

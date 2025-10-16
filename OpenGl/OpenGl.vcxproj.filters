@@ -26,18 +26,25 @@
     <ClInclude Include="src\Header\file.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\Header\openGl.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\Header\stb_image.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\Header\kbEvent.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\Header\Shader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Header\presetVertices.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Shaders\main.glsl" />
+    <None Include="src\Shaders\lightShader.fs" />
+    <None Include="src\Shaders\shader.fs" />
+    <None Include="src\Shaders\shader.vs" />
+    <None Include="src\Shaders\TextureShader.fs" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="src\Textures\sample.jpg">
@@ -47,6 +54,9 @@
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="src\Textures\test.jpg">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="src\Textures\test.png">
       <Filter>资源文件</Filter>
     </Image>
   </ItemGroup>

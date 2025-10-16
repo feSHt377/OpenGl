@@ -13,14 +13,29 @@ uniform mat4 model;//模型矩阵
 uniform mat4 view;//观察矩阵​
 uniform mat4 projection;//投影矩阵
 
-out vec3 ourColor;
+uniform int uIsLight;
+
+
+
+out vec3 objectColor;
 out vec2 TexCoord;
+flat out int isLight;
+
 
 
 void main()
 {
     gl_Position = projection * view * model * transform * vec4(aPos.x + Pos_offset.x, aPos.y + Pos_offset.y , aPos.z + Pos_offset.z, 1.0);
     // gl_Position = vec4(aPos, 1.0);
-    ourColor = aColor + color_offset;
+    // aColor = vec3(0.4,0.4,0.4);
+    // if(aColor == vec3(0.0)){
+    //     ourColor = vec3(1.0);
+    // }else{
+    //     ourColor = aColor + color_offset;
+    // }
+    objectColor = aColor + color_offset;
     TexCoord = aTexCoord;
+    if(uIsLight==1){
+        isLight = uIsLight;
+    }
 }

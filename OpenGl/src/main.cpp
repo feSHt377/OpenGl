@@ -25,6 +25,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "Header/stb_image.h"
 #include "Header/kbEvent.h"
+#include "Header/Shader.h"
 
 //#include "Header/openGl.h"s
 
@@ -34,7 +35,7 @@ int screenHeight = 1024;
 bool needUpdateProjection = true;//是否需要更新投影矩阵
 
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);//摄像机位置
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);//摄像机位置
 glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);//摄像机目标位置
 glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);//摄像机方向（从目标指向摄像机位置的向量）
 //方向向量(Direction Vector)并不是最好的名字，因为它实际上指向从它到目标向量的相反方向
@@ -47,8 +48,37 @@ glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);//摄像机上向�
 float pitch = 0.0f;//俯仰角
 float yaw = -90.0f;//偏航角
 
-float cameraSpeed = 0.05f;
-float cameraSensitivity = 0.1f;
+float cameraSpeed = 2.0f; //摄像机移动速度 单位/s
+float cameraSensitivity = 80.0f;//鼠标灵敏度 角度/s
+
+float cameraSpeedBoost = 3.0f;//摄像机加速倍数
+
+
+glm::vec3 lightPos(2.2f, 1.0f, -2.0f);
+glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
+
+
+
+
+
+
+
+//帧速率控制
+float maxFPS = 240;
+float delay = 1000/maxFPS;
+float frameLastTime = 0;
+float framePerSecond = 240;
+float frameTime = 0;
+
+//鼠标数据记录相关
+float lastX = screenWidth / 2.0f;
+float lastY = screenHeight / 2.0f;
+float mouseSensitivity = 0.1f;
+
+bool mouseUse = false;
+
+GLFWwindow* window;//全局窗口指针
+
 
 std::string getTimeString() {
 	time_t nowtime;
@@ -74,6 +104,42 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }
 
 
+
+//检查OpenGL是否错误的函数
+bool checkOpenGLError() {
+	bool foundError = false;
+	int glErr = glGetError();
+	while (glErr != GL_NO_ERROR) {
+		log("glError:" + glErr);
+		foundError = true;
+		glErr = glGetError();
+	}
+	return foundError;
+}
+
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	//std::cout << "Mouse move to x : " << xpos << " y : " << ypos << std::endl;
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; // 反转y轴，因为y坐标是从窗口顶部开始的
+	lastX = xpos;
+	lastY = ypos;
+
+	float yawOffset = xoffset * cameraSensitivity * mouseSensitivity * frameTime;
+	float pitchOffset = yoffset * cameraSensitivity * mouseSensitivity * frameTime;
+
+	yaw += yawOffset;
+	pitch += pitchOffset;
+
+	// 限制俯仰角的范围，防止翻转
+	if (pitch > 89.0f) {
+		pitch = 89.0f;
+	}
+	if (pitch < -89.0f) {
+		pitch = -89.0f;
+	}
+}
 
 
 /*
@@ -134,99 +200,96 @@ int init(GLFWwindow** windex) {
 
 
 
-
-
-
-/*
-	@feSHt3
-	int1 :: key_enum
-	int2 :: key_status	->  GLFW_RELEASE
-						->  GLFW_PRESS
-*/
-std::unordered_map<int, int> keyStatus;
-
-void processInput(GLFWwindow* window)
-{
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-
-
-	keyStatus[GLFW_KEY_W] = glfwGetKey(window, GLFW_KEY_W);
-	keyStatus[GLFW_KEY_A] = glfwGetKey(window, GLFW_KEY_A);
-	keyStatus[GLFW_KEY_S] = glfwGetKey(window, GLFW_KEY_S);
-	keyStatus[GLFW_KEY_D] = glfwGetKey(window, GLFW_KEY_D);
-	keyStatus[GLFW_KEY_UP] = glfwGetKey(window, GLFW_KEY_UP);
-	keyStatus[GLFW_KEY_DOWN] = glfwGetKey(window, GLFW_KEY_DOWN);
-	keyStatus[GLFW_KEY_LEFT] = glfwGetKey(window, GLFW_KEY_LEFT);
-	keyStatus[GLFW_KEY_RIGHT] = glfwGetKey(window, GLFW_KEY_RIGHT);
-}
-
-/*
-int checkKeyStatus(int key_enum) {
-	return keyStatus[key_enum];
-}
-*/
-
-
-bool isKeyPressing(int key_enum) {
-	if (keyStatus[key_enum] == GLFW_PRESS) {
-		return true;
-	}
-	else {
-		return false;
-	}
-
-}
-
-
 void processCameraMove() {
 	float cameraToTargetDistence = glm::length(cameraPos - cameraTarget);
-	log("Camera distence :"+std::to_string(cameraToTargetDistence));
-	log("camera z : "+std::to_string(cameraPos.z));
+	//log("Camera distence :" + std::to_string(cameraToTargetDistence));
+	//log("camera z : " + std::to_string(cameraPos.z));
+	float cameraRealSpeed = cameraSpeed * frameTime;
+	float cameraRealSensitivity = cameraSensitivity * frameTime;
+
+	if (isKeyPressing(GLFW_KEY_CAPS_LOCK)) {
+		cameraRealSpeed *= cameraSpeedBoost;
+		log("is key CAPS_LOCK pressing , speed boost x" + std::to_string(cameraSpeedBoost));
+	}
+
+
+
 	//计算摄像机位置
 	if (isKeyPressing(GLFW_KEY_W)) {
-		cameraPos += cameraSpeed * cameraFront;
+		cameraPos += cameraRealSpeed * cameraFront;
 		log("is key W pressing");
 	}
 	if (isKeyPressing(GLFW_KEY_S)) {
-		cameraPos -= cameraSpeed * cameraFront;
+		cameraPos -= cameraRealSpeed * cameraFront;
 		log("is key S pressing");
 	}
 	if (isKeyPressing(GLFW_KEY_A)) {
-		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraRealSpeed;
 		log("is key A pressing");
-		
+
 	}
 	if (isKeyPressing(GLFW_KEY_D)) {
-		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraRealSpeed;
 		log("is key D pressing");
 	}
+	if (isKeyPressing(GLFW_KEY_SPACE)) {
+		cameraPos += cameraRealSpeed * cameraUp;
+		log("is key SPACE pressing");
+	}
+	if (isKeyPressing(GLFW_KEY_LEFT_SHIFT)) {
+		cameraPos += cameraRealSpeed * ( - cameraUp );
+		log("is key LEFT_SHIFT pressing");
+	}
+
+
 
 	// 记录摄像机旋转
 	if (isKeyPressing(GLFW_KEY_UP)) {
-		pitch += cameraSensitivity;
+		pitch += cameraRealSensitivity;
 		log("is key UP pressing");
 	}
 	if (isKeyPressing(GLFW_KEY_DOWN)) {
-		pitch -= cameraSensitivity;
+		pitch -= cameraRealSensitivity;
 		log("is key DOWN pressing");
 	}
 	if (isKeyPressing(GLFW_KEY_LEFT)) {
-		yaw -= cameraSensitivity;
+		yaw -= cameraRealSensitivity;
 		log("is key LEFT pressing");
 	}
 	if (isKeyPressing(GLFW_KEY_RIGHT)) {
-		yaw += cameraSensitivity;
+		yaw += cameraRealSensitivity;
 		log("is key RIGHT pressing");
 	}
+
+	if (isKeyPressing(GLFW_KEY_DELETE)) {
+		cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
+		cameraDirection = glm::normalize(cameraPos - cameraTarget);
+		cameraFront = -cameraDirection;
+		pitch = 0.0f;
+		yaw = -90.0f;
+		log("is key DELETE pressing");
+	}
+		
+	// 限制俯仰角的范围，防止翻转
+	if (pitch > 89.0f){
+		pitch = 89.0f;
+	}	
+	if(pitch < -89.0f){
+		pitch = -89.0f;
+	}
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+	front.y = sin(glm::radians(pitch));
+	front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+
+	cameraFront = glm::normalize(front);
+
 }
 
 
 int main(int argc, char* args[]) {
 
-	
-
-	GLFWwindow* window ;
 	init(&window , screenWidth, screenHeight , "firstCube");//传入指针window的指针，直接传输window指针，实际上传输的是此指针的副本，不会影响主函数的指针，所以使用传输指针的指针的方法
 
 	
@@ -245,6 +308,7 @@ int main(int argc, char* args[]) {
 	//	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // 左下
 	//	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // 左上
 	//};
+
 
 	float vertices[] = {
 		// 位置              // 颜色              // 纹理坐标
@@ -285,46 +349,109 @@ int main(int argc, char* args[]) {
 		-1.0f, -1.0f,  1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f   // 左下前 23
 	};
 
+	float vertices2[] = {
+		// 位置              // 颜色              // 纹理坐标
+			// 前面 (红色面)
+		-1.0f, -1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 0.0f,  // 左下前 0
+		1.0f, -1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 0.0f,  // 右下前 1
+		1.0f,  1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 1.0f,  // 右上前 2
+		-1.0f,  1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 1.0f,  // 左上前 3
+
+		// 后面 (绿色面)
+		-1.0f, -1.0f, -1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 0.0f,  // 左下后 4
+		1.0f, -1.0f, -1.0f, 0.9f, 0.2f, 0.0f,  0.0f, 0.0f,  // 右下后 5
+		1.0f,  1.0f, -1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 1.0f,  // 右上后 6
+		-1.0f,  1.0f, -1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 1.0f,  // 左上后 7
+
+		// 左面 (蓝色面)
+		-1.0f, -1.0f, -1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 0.0f,  // 左下后 8
+		-1.0f, -1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 0.0f,  // 左下前 9
+		-1.0f,  1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 1.0f,  // 左上前 10
+		-1.0f,  1.0f, -1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 1.0f,  // 左上后 11
+
+		// 右面 (黄色面)
+		1.0f, -1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 0.0f,  // 右下前 12
+		1.0f, -1.0f, -1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 0.0f,  // 右下后 13
+		1.0f,  1.0f, -1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 1.0f,  // 右上后 14
+		1.0f,  1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 1.0f,  // 右上前 15
+
+		// 上面 (青色面)
+		-1.0f,  1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 0.0f,  // 左上前 16
+		1.0f,  1.0f,  1.0f,  0.9f, 0.2f, 0.0f,   1.0f, 0.0f,  // 右上前 17
+		1.0f,  1.0f, -1.0f,  0.9f, 0.2f, 0.0f,   1.0f, 1.0f,  // 右上后 18
+		-1.0f,  1.0f, -1.0f, 0.9f, 0.2f, 0.0f,  0.0f, 1.0f,  // 左上后 19
+
+		// 下面 (紫色面)
+		-1.0f, -1.0f, -1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 0.0f,  // 左下后 20
+		1.0f, -1.0f, -1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 0.0f,  // 右下后 21
+		1.0f, -1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  1.0f, 1.0f,  // 右下前 22
+		-1.0f, -1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 1.0f   // 左下前 23
+	};//纯橘色顶点数组
+
 	unsigned int VBOID;// 存放顶点缓冲对象的id
 	glGenBuffers(1, &VBOID);
 	glBindBuffer(GL_ARRAY_BUFFER, VBOID);//通过id启动VBO
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //传入顶点数据
 
+	Shader cubeShader("G:\\Docs\\Visual Studio 2022\\Projects\\OpenGl\\OpenGl\\src\\Shaders\\shader.vs", "G:\\Docs\\Visual Studio 2022\\Projects\\OpenGl\\OpenGl\\src\\Shaders\\shader.fs");//创建预渲染立方体
+	Shader lightShader("G:\\Docs\\Visual Studio 2022\\Projects\\OpenGl\\OpenGl\\src\\Shaders\\shader.vs", "G:\\Docs\\Visual Studio 2022\\Projects\\OpenGl\\OpenGl\\src\\Shaders\\lightShader.fs");//创建预渲染光源立方体
+
+	//unsigned int vertexShaderID = glCreateShader(GL_VERTEX_SHADER);//创建顶点着色器id
+
+	//std::string source;
+	//readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/shader.vs", &source);
+	//const char* vertexShaderSource = source.c_str();
+
+	////                 着色器id  源码数量  源码字符串地址   未知
+	//glShaderSource(vertexShaderID, 1, &vertexShaderSource, NULL);//传入顶点着色器源码 
+	//glCompileShader(vertexShaderID);//开始编译
+
+	//// 编译顶点着色器后检查
+	//int success;
+	//char infoLog[512];
+	//glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
+	//if (!success) {
+	//	glGetShaderInfoLog(vertexShaderID, 512, NULL, infoLog);
+	//	log("Vertex Shader Error: " + std::string(infoLog));
+	//}
 
 
-	unsigned int vertexShaderID = glCreateShader(GL_VERTEX_SHADER);//创建顶点着色器id
-
-
-
-	std::string source;
-	readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/shader.vs", &source);
-	const char* vertexShaderSource = source.c_str();
-
-	//                 着色器id  源码数量  源码字符串地址   未知
-	glShaderSource(vertexShaderID, 1, &vertexShaderSource, NULL);//传入顶点着色器源码 
-	glCompileShader(vertexShaderID);//开始编译
-
-
+	////readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/lightShader.fs", &source);
 	//readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/shader.fs", &source);
-	readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/TextureShader.fs", &source);
-	unsigned int fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);//创建片段着色器id
+	////readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/TextureShader.fs", &source);1
+	//unsigned int fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);//创建片段着色器id
 
-	const char* fragmentShaderSource = source.c_str();
-	//                 着色器id  源码数量  源码字符串地址   未知
-	glShaderSource(fragmentShaderID, 1, &fragmentShaderSource, NULL);//传入片段着色器源码 
-	glCompileShader(fragmentShaderID);//开始编译
+	//const char* fragmentShaderSource = source.c_str();
+	////                 着色器id  源码数量  源码字符串地址   未知
+	//glShaderSource(fragmentShaderID, 1, &fragmentShaderSource, NULL);//传入片段着色器源码 
+	//glCompileShader(fragmentShaderID);//开始编译
 
-	unsigned int shaderProgram;
-	shaderProgram = glCreateProgram();
+	//// 编译片段着色器后检查
+	//glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
+	//if (!success) {
+	//	glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
+	//	log("Fragment Shader Error: " + std::string(infoLog));
+	//}
+
+	//unsigned int shaderProgram;
+	//shaderProgram = glCreateProgram();
 
 
 
 
-	glAttachShader(shaderProgram, vertexShaderID);// 将顶点着色器附加到着色器程序
-	glAttachShader(shaderProgram, fragmentShaderID);// 将片段着色器附加到着色器程序
-	glLinkProgram(shaderProgram);// 链接所有附加的着色器，生成最终可执行程序
+	//glAttachShader(shaderProgram, vertexShaderID);// 将顶点着色器附加到着色器程序
+	//glAttachShader(shaderProgram, fragmentShaderID);// 将片段着色器附加到着色器程序
+	//glLinkProgram(shaderProgram);// 链接所有附加的着色器，生成最终可执行程序
 
-
+	//// 链接着色器程序后检查
+	//glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	//if (!success) {
+	//	glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+	//	log("Shader Program Link Error: " + std::string(infoLog));
+	//}
+	//
+	
+	
 
 
 	unsigned int VAOID;
@@ -341,50 +468,49 @@ int main(int argc, char* args[]) {
 	//glBindVertexArray(0);//解绑vao，确定当前vbo状态并锁定VAO配置
 
 
-	
-	unsigned int textureID;
-	glGenTextures(1, &textureID);
+	//纹理操作
+	//unsigned int textureID;
+	//glGenTextures(1, &textureID);
 
-	glBindTexture(GL_TEXTURE_2D, textureID);
+	//glBindTexture(GL_TEXTURE_2D, textureID);
 
-	// 为当前绑定的纹理对象设置环绕、过滤方式
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//// 为当前绑定的纹理对象设置环绕、过滤方式
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	stbi_set_flip_vertically_on_load(true);//需翻转 Y 轴（OpenGL纹理坐标系与图片默认方向相反）!!!!!!!!!!!!
-	// 加载并生成纹理
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Textures/test.png", &width, &height, &nrChannels, 0);
+	//stbi_set_flip_vertically_on_load(true);//需翻转 Y 轴（OpenGL纹理坐标系与图片默认方向相反）!!!!!!!!!!!!
+	//// 加载并生成纹理
+	//int width, height, nrChannels;
+	//unsigned char* data = stbi_load("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Textures/test.png", &width, &height, &nrChannels, 0);
 
-	if (data) {
-		/*
-		void glTexImage2D(
-			GLenum target,       // 1. 纹理目标（绑定的是哪种纹理）
-			GLint level,         // 2. Mipmap 级别（当前上传的是第几层纹理）
-			GLint internalFormat,// 3. GPU 内部存储的纹理格式（如何压缩/存储像素）
-			GLsizei width,       // 4. 纹理的像素宽度
-			GLsizei height,      // 5. 纹理的像素高度
-			GLint border,        // 6. 纹理边框宽度（现代OpenGL固定为0）​​现代OpenGL中必须传0​​，因为边框功能已被废弃。
-			GLenum format,       // 7. 上传数据的“通道布局”（原始数据的格式）
-			GLenum type,         // 8. 上传数据的“像素类型”（每个通道的字节大小）
-			const void *data     // 9. 原始像素数据的指针（比如stbi_load返回的数组）
-		);
-		*/
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		log("Texture has been loaded.");
-	}
-	else
-	{
-		log("Failed to load texture!!");
-	}
+	//if (data) {
+	//	/*
+	//	void glTexImage2D(
+	//		GLenum target,       // 1. 纹理目标（绑定的是哪种纹理）
+	//		GLint level,         // 2. Mipmap 级别（当前上传的是第几层纹理）
+	//		GLint internalFormat,// 3. GPU 内部存储的纹理格式（如何压缩/存储像素）
+	//		GLsizei width,       // 4. 纹理的像素宽度
+	//		GLsizei height,      // 5. 纹理的像素高度
+	//		GLint border,        // 6. 纹理边框宽度（现代OpenGL固定为0）​​现代OpenGL中必须传0​​，因为边框功能已被废弃。
+	//		GLenum format,       // 7. 上传数据的“通道布局”（原始数据的格式）
+	//		GLenum type,         // 8. 上传数据的“像素类型”（每个通道的字节大小）
+	//		const void *data     // 9. 原始像素数据的指针（比如stbi_load返回的数组）
+	//	);
+	//	*/
+	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	//	glGenerateMipmap(GL_TEXTURE_2D);
+	//	log("Texture has been loaded.");
+	//}
+	//else
+	//{
+	//	log("Failed to load texture!!");
+	//}
 
-	stbi_image_free(data);//free
+	//stbi_image_free(data);//free
 
-	glDeleteShader(vertexShaderID);//free
-	glDeleteShader(fragmentShaderID);//free
+
 
 	
 	//vbo的最后修改工作
@@ -405,26 +531,15 @@ int main(int argc, char* args[]) {
 	glEnableVertexAttribArray(1);
 
 
-	glVertexAttribPointer(
-		2,                 // 属性索引
-		2,                 // vec2
-		GL_FLOAT,          // 浮点类型
-		GL_FALSE,          // 不标准化
-		8 * sizeof(float), // 相同的步长
-		(void*)(6 * sizeof(float)) // 跳过前6个float(位置)
-	);
-	glEnableVertexAttribArray(2);
-
-
-	/*
-	float vertices[] = {
-		// 位置              // 颜色            // 纹理坐标
-		-0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // 左下
-		 0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // 右下
-		-0.3f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f, 0.0f, 1.0f,  // 左上（稍微右移形成平行四边形）
-		 0.7f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f, 1.0f   // 右上（稍微右移形成平行四边形）
-	};
-	*/
+	//glVertexAttribPointer(
+	//	2,                 // 属性索引(纹理)
+	//	2,                 // vec2
+	//	GL_FLOAT,          // 浮点类型
+	//	GL_FALSE,          // 不标准化
+	//	8 * sizeof(float), // 相同的步长
+	//	(void*)(6 * sizeof(float)) // 跳过前6个float(位置)
+	//);
+	//glEnableVertexAttribArray(2);
 
 
 	// 2. 创建EBO
@@ -462,20 +577,19 @@ int main(int argc, char* args[]) {
 
 
 
-	//glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-
-
-
-
 
 	glEnable(GL_DEPTH_TEST);//开启深度测试
 
 	glBindVertexArray(0);//解绑vao，确定当前vbo状态并锁定VAO配置
 
-	unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");//获取model矩阵位置
-	unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");//获取view矩阵位置
-	unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");//获取projection矩阵位置
-	unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");//获取transform矩阵位置
+	//unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");//获取model矩阵位置
+	//unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");//获取view矩阵位置
+	//unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");//获取projection矩阵位置
+	//unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");//获取transform矩阵位置
+
+	//unsigned int isLightLoc = glGetUniformLocation(shaderProgram, "uIsLight");//获取isLight位置
+
+	//
 
 
 
@@ -502,9 +616,29 @@ int main(int argc, char* args[]) {
 
 
 
+	unsigned int lightVAOID;//存放light vao id
+	glGenVertexArrays(1, &lightVAOID);//生成light vao id
+	glBindVertexArray(lightVAOID);//绑定light vao
 
-	//char* str = (char*)malloc(1);
-	//int mem = 0;
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBOID);//绑定VBO（数据已存在，无需再次上传）
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);//绑定EBO（数据已存在，无需再次上传）
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);//传入索引数据
+
+	// 设置矩阵
+	cubeShader.setMat4("model" , model);
+	cubeShader.setMat4("view", view);
+	cubeShader.setMat4("projection", projection);
+	
+	glBindVertexArray(0);//解绑light vao
+
+
 
 
 	glm::vec3 cubePositions[] = {
@@ -520,6 +654,7 @@ int main(int argc, char* args[]) {
 		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};//多个立方体位置
 
+	glfwSwapInterval(1);//开启垂直同步
 
 	float rota = 20;
 	float scale = 2;
@@ -528,23 +663,16 @@ int main(int argc, char* args[]) {
 	int verticesCount = sizeof(vertices) / sizeof(int);
 	int eboS = sizeof(indices) / sizeof(int);
 
-	//帧速率控制
-	float maxFPS = 240;
-	float delay = 1000/maxFPS;
-	float frameLastTime = 0;
-	float framePerSecond = 0;
-	float frameTime = 0;
+
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//隐藏并锁定鼠标
+	glfwSetCursorPosCallback(window, mouse_callback);
 	while (!glfwWindowShouldClose(window))
 	{	
+		float frameStartTime = glfwGetTime();
+
 		frameTime = glfwGetTime() - frameLastTime;
 		framePerSecond = 1 / frameTime;
 		frameLastTime = glfwGetTime();
-
-		//log("is key press:" + std::to_string(isKeyPressing(GLFW_KEY_W)) );
-
-		/*if (framePerSecond > maxFPS) {
-			delay = (1000 / maxFPS - frameTime * 1000)/2;
-		}*/
 
 		//log(std::to_string(framePerSecond) + "  FrameTime : " + std::to_string(frameTime) + " delay :" + std::to_string(delay));
 		if (needUpdateProjection) {
@@ -553,65 +681,37 @@ int main(int argc, char* args[]) {
 		}
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);//清除颜色缓冲区和深度缓冲区
 
-		Sleep(delay);//延时，控制帧率
-		//if (mem <= 1024 * 1024 * 1024) {
-		//	mem += 1024 * 1024 * 10;
-		//	str = (char*)realloc(str , mem);
-		//	//memset(str, 1, sizeof(str)-1);
-		//	log(std::to_string(mem));
-		//	log("try to get 200mb mem");
-		//}
 
-		// 清屏（重要！）
-		glClearColor(0.0f, 0.5f, 0.0f, 1.0f); // 设置清屏颜色
+		glClearColor(0.2f, 0.2f, 0.2f, 1.0f); // 设置清屏颜色
 		glClear(GL_COLOR_BUFFER_BIT);          // 清除颜色缓冲区
 
 
-		glUseProgram(shaderProgram);//激活程序
+		//glUseProgram(shaderProgram);//激活程序
+
+		cubeShader.use();//激活程序
+		
 		
 
 
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);//视图矩阵(摄像机位置，目标位置，摄像机上向量)
 
+		//glUniform1i(isLightLoc, 0);//设置是否为光源对象,此处默认为否0
 
 		// 设置矩阵
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+		cubeShader.setMat4("model", model);
+		cubeShader.setMat4("view", view);
+		cubeShader.setMat4("projection", projection);
 
 
-		float timeValue = glfwGetTime();
-
-		float timeToSin = sin(timeValue);
-
-
-		int vertexColorLocation = glGetUniformLocation(shaderProgram, "color_offset");
-		//glUniform3f(vertexColorLocation , sin(timeValue), sin(timeValue +90) , sin(timeValue + 180));
-
-		int vertexPosOffset = glGetUniformLocation(shaderProgram, "Pos_offset"); 
-		//glUniform3f(vertexPosOffset, 0.1f, 0.1f, 0.1f);
-		//glUniform4f(vertexColorLocation, 0.0f, greenValue, 1.0f - greenValue, 1.0f);
-
-
-		if (scale >= 1) {
-			scale_forward = -1;
-		}
-		if(scale <= 0.3f ){
-			scale_forward = 1;
-		}
-		//scale += scale_forward * 0.01f;
 		glm::mat4 trans = glm::mat4(1.0f);
 		//旋转角为 rota 第二个参数为旋转轴，绕y轴旋转
 		//trans = glm::rotate(trans, (float)glfwGetTime() * glm::radians(rota), glm::vec3(0.0, 1.0, 0.0));//每次渲染都绕y轴旋转
 		
-		trans = glm::rotate(trans, glm::radians(20.0f), glm::vec3(1.0, 0.0, 0.0));//绕x轴旋转20度，固定
+		//trans = glm::rotate(trans, glm::radians(20.0f), glm::vec3(1.0, 0.0, 0.0));//绕x轴旋转20度，固定
 
-		trans = glm::scale(trans, glm::vec3(scale, scale, scale));//缩放
+		//trans = glm::scale(trans, glm::vec3(scale, scale, scale));//缩放
 
-
-
-
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+		cubeShader.setMat4("transform",trans);
 
 
 
@@ -619,13 +719,15 @@ int main(int argc, char* args[]) {
 
 		
 		// 绑定纹理
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureID);
+		/*glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);*/
 
 
 		// 绑定VAO（解锁VAO配置，并从中读取所有顶点属性配置）
 		//opengl的core模式强制要求使用vao，若绘制时vao绑定失败或未绑定会拒绝绘制任何内容
 		glBindVertexArray(VAOID);
+
+
 
 		// 绘制三角形
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, verticesCount); // 从0开始，绘制3个顶点
@@ -649,11 +751,35 @@ int main(int argc, char* args[]) {
 		
 		
 		glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
+		//checkOpenGLError();
+
+		lightShader.use();//激活light程序
+		glBindVertexArray(lightVAOID);//绑定light vao
+		
+
+		// 设置矩阵
+		lightShader.setMat4("model", model);
+		lightShader.setMat4("view", view);
+		lightShader.setMat4("projection", projection);
+		
+		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, lightPos);//平移到light位置
+		trans = glm::scale(trans, glm::vec3(0.2f, 0.2f, 0.2f));//缩小
+		//glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));//更新light的transform矩阵
+		lightShader.setMat4("transform" , trans);//更新light的transform矩阵
+		checkOpenGLError();
+		
+		glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
+
+		
+		//float renderTime = glfwGetTime() - frameStartTime;
+		//Sleep(delay - renderTime * 1000);//延时，控制帧率
 
 		processInput(window);
 		processCameraMove();
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+		
 	}
 
 	/*

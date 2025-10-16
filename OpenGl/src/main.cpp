@@ -569,6 +569,7 @@ int main(int argc, char* args[]) {
 		22, 23, 20  // 第二个三角形
 	};
 
+
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);

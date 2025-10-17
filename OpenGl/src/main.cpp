@@ -49,7 +49,7 @@ float pitch = 0.0f;//俯仰角
 float yaw = -90.0f;//偏航角
 
 float cameraSpeed = 2.0f; //摄像机移动速度 单位/s
-float cameraSensitivity = 80.0f;//鼠标灵敏度 角度/s
+float cameraSensitivity = 1.0f;//视角移动灵敏度 角度/s
 
 float cameraSpeedBoost = 3.0f;//摄像机加速倍数
 
@@ -71,9 +71,10 @@ float framePerSecond = 240;
 float frameTime = 0;
 
 //鼠标数据记录相关
-float lastX = screenWidth / 2.0f;
-float lastY = screenHeight / 2.0f;
-float mouseSensitivity = 0.1f;
+float lastX = 0;
+float lastY = 0;
+bool mouseInit = false;
+float mouseSensitivity = 0.05f;
 
 bool mouseUse = false;
 
@@ -118,16 +119,22 @@ bool checkOpenGLError() {
 }
 
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {// 鼠标移动回调函数
 	//std::cout << "Mouse move to x : " << xpos << " y : " << ypos << std::endl;
 
+	if (!mouseInit) {// 初始化鼠标位置,防止第一次移动时产生巨大偏移
+		lastX = xpos;
+		lastY = ypos;
+		mouseInit = true;
+		return;
+	}
 	float xoffset = xpos - lastX;
 	float yoffset = lastY - ypos; // 反转y轴，因为y坐标是从窗口顶部开始的
 	lastX = xpos;
 	lastY = ypos;
 
-	float yawOffset = xoffset * cameraSensitivity * mouseSensitivity * frameTime;
-	float pitchOffset = yoffset * cameraSensitivity * mouseSensitivity * frameTime;
+	float yawOffset = xoffset * cameraSensitivity * mouseSensitivity;
+	float pitchOffset = yoffset * cameraSensitivity * mouseSensitivity;
 
 	yaw += yawOffset;
 	pitch += pitchOffset;
@@ -209,7 +216,7 @@ void processCameraMove() {
 
 	if (isKeyPressing(GLFW_KEY_CAPS_LOCK)) {
 		cameraRealSpeed *= cameraSpeedBoost;
-		log("is key CAPS_LOCK pressing , speed boost x" + std::to_string(cameraSpeedBoost));
+		//log("is key CAPS_LOCK pressing , speed boost x" + std::to_string(cameraSpeedBoost));
 	}
 
 
@@ -278,13 +285,6 @@ void processCameraMove() {
 		pitch = -89.0f;
 	}
 
-	glm::vec3 front;
-	front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
-	front.y = sin(glm::radians(pitch));
-	front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
-
-	cameraFront = glm::normalize(front);
-
 }
 
 
@@ -310,7 +310,7 @@ int main(int argc, char* args[]) {
 	//};
 
 
-	float vertices[] = {
+	float vertices2[] = {
 		// 位置              // 颜色              // 纹理坐标
 			// 前面 (红色面)
 		-1.0f, -1.0f,  1.0f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,  // 左下前 0
@@ -349,7 +349,7 @@ int main(int argc, char* args[]) {
 		-1.0f, -1.0f,  1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f   // 左下前 23
 	};
 
-	float vertices2[] = {
+	float vertices[] = {
 		// 位置              // 颜色              // 纹理坐标
 			// 前面 (红色面)
 		-1.0f, -1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 0.0f,  // 左下前 0
@@ -393,9 +393,8 @@ int main(int argc, char* args[]) {
 	glBindBuffer(GL_ARRAY_BUFFER, VBOID);//通过id启动VBO
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //传入顶点数据
 
-	Shader cubeShader("G:\\Docs\\Visual Studio 2022\\Projects\\OpenGl\\OpenGl\\src\\Shaders\\shader.vs", "G:\\Docs\\Visual Studio 2022\\Projects\\OpenGl\\OpenGl\\src\\Shaders\\shader.fs");//创建预渲染立方体
-	Shader lightShader("G:\\Docs\\Visual Studio 2022\\Projects\\OpenGl\\OpenGl\\src\\Shaders\\shader.vs", "G:\\Docs\\Visual Studio 2022\\Projects\\OpenGl\\OpenGl\\src\\Shaders\\lightShader.fs");//创建预渲染光源立方体
-
+	Shader cubeShader("src/Shaders/shader.vs", "src/Shaders/shader.fs");  // 立方体着色器（顶点+片段）
+	Shader lightShader("src/Shaders/shader.vs" ,"src/Shaders/lightShader.fs");                     // 光源着色器（片段）
 	//unsigned int vertexShaderID = glCreateShader(GL_VERTEX_SHADER);//创建顶点着色器id
 
 	//std::string source;
@@ -669,6 +668,14 @@ int main(int argc, char* args[]) {
 	glfwSetCursorPosCallback(window, mouse_callback);
 	while (!glfwWindowShouldClose(window))
 	{	
+
+		glm::vec3 front;
+		front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+		front.y = sin(glm::radians(pitch));
+		front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+
+		cameraFront = glm::normalize(front);//更新相机视线向量
+
 		float frameStartTime = glfwGetTime();
 
 		frameTime = glfwGetTime() - frameLastTime;
@@ -676,7 +683,7 @@ int main(int argc, char* args[]) {
 		frameLastTime = glfwGetTime();
 
 		//log(std::to_string(framePerSecond) + "  FrameTime : " + std::to_string(frameTime) + " delay :" + std::to_string(delay));
-		if (needUpdateProjection) {
+		if (needUpdateProjection) {//在窗口分辨率改变后更新透视矩阵
 			projection = glm::perspective(glm::radians(45.0f), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);//透视投影矩阵
 			needUpdateProjection = false;
 		}
@@ -685,6 +692,8 @@ int main(int argc, char* args[]) {
 
 		glClearColor(0.2f, 0.2f, 0.2f, 1.0f); // 设置清屏颜色
 		glClear(GL_COLOR_BUFFER_BIT);          // 清除颜色缓冲区
+
+
 
 
 		//glUseProgram(shaderProgram);//激活程序
@@ -778,6 +787,7 @@ int main(int argc, char* args[]) {
 
 		processInput(window);
 		processCameraMove();
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 		

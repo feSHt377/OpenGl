@@ -100,7 +100,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	screenWidth = width;
 	screenHeight = height;
 	needUpdateProjection = true;//通知需要更新投影矩阵
-	std::cout << "\r width: " << width << " height : " << height;
+	//std::cout << "\r width: " << width << " height : " << height;
 	//printf("\nwd : %d , ht : %d" , width , height);
 }
 
@@ -310,7 +310,7 @@ int main(int argc, char* args[]) {
 	//};
 
 
-	float vertices2[] = {
+	float vertices3[] = {
 		// 位置              // 颜色              // 纹理坐标
 			// 前面 (红色面)
 		-1.0f, -1.0f,  1.0f,  1.0f, 0.0f, 0.0f,  0.0f, 0.0f,  // 左下前 0
@@ -349,7 +349,51 @@ int main(int argc, char* args[]) {
 		-1.0f, -1.0f,  1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f   // 左下前 23
 	};
 
-	float vertices[] = {
+	float vertices[] = {// 带法线的立方体顶点数据
+	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+
+	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+	 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+	};
+
+	float vertices2[] = {
 		// 位置              // 颜色              // 纹理坐标
 			// 前面 (红色面)
 		-1.0f, -1.0f,  1.0f,  0.9f, 0.2f, 0.0f,  0.0f, 0.0f,  // 左下前 0
@@ -515,19 +559,22 @@ int main(int argc, char* args[]) {
 	//vbo的最后修改工作
 
 		// 3. 设置顶点属性指针
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(
-		1,                 // 属性索引1 (颜色)
-		3,                 // vec3 (r,g,b)
-		GL_FLOAT,          // 浮点类型
-		GL_FALSE,          // 不标准化
-		8 * sizeof(float), // 相同的步长
-		(void*)(3 * sizeof(float)) // 跳过前3个float(位置)
-	);
-	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//法线属性
+	glEnableVertexAttribArray(3);
+
+	//glVertexAttribPointer(
+	//	1,                 // 属性索引1 (颜色)
+	//	3,                 // vec3 (r,g,b)
+	//	GL_FLOAT,          // 浮点类型
+	//	GL_FALSE,          // 不标准化
+	//	8 * sizeof(float), // 相同的步长
+	//	(void*)(3 * sizeof(float)) // 跳过前3个float(位置)
+	//);
+	//glEnableVertexAttribArray(1);
 
 
 	//glVertexAttribPointer(
@@ -541,34 +588,49 @@ int main(int argc, char* args[]) {
 	//glEnableVertexAttribArray(2);
 
 
-	// 2. 创建EBO
+	
+	//unsigned int indices[] = {
+	//	// 前面 (红色)
+	//	0, 1, 2,   // 第一个三角形
+	//	2, 3, 0,    // 第二个三角形
+
+	//	// 后面 (绿色)
+	//	4, 5, 6,   // 第一个三角形
+	//	6, 7, 4,    // 第二个三角形
+
+	//	// 左面 (蓝色)
+	//	8, 9, 10,  // 第一个三角形
+	//	10, 11, 8,  // 第二个三角形
+
+	//	// 右面 (黄色)
+	//	12, 13, 14, // 第一个三角形
+	//	14, 15, 12, // 第二个三角形
+
+	//	// 上面 (青色)
+	//	16, 17, 18, // 第一个三角形
+	//	18, 19, 16, // 第二个三角形
+
+	//	// 下面 (紫色)
+	//	20, 21, 22, // 第一个三角形
+	//	22, 23, 20  // 第二个三角形
+	//};
+
 	unsigned int indices[] = {
-		// 前面 (红色)
-		0, 1, 2,   // 第一个三角形
-		2, 3, 0,    // 第二个三角形
-
-		// 后面 (绿色)
-		4, 5, 6,   // 第一个三角形
-		6, 7, 4,    // 第二个三角形
-
-		// 左面 (蓝色)
-		8, 9, 10,  // 第一个三角形
-		10, 11, 8,  // 第二个三角形
-
-		// 右面 (黄色)
-		12, 13, 14, // 第一个三角形
-		14, 15, 12, // 第二个三角形
-
-		// 上面 (青色)
-		16, 17, 18, // 第一个三角形
-		18, 19, 16, // 第二个三角形
-
-		// 下面 (紫色)
-		20, 21, 22, // 第一个三角形
-		22, 23, 20  // 第二个三角形
+		// 前面 (z=-0.5)
+		0, 1, 2, 2, 4, 5,
+		// 后面 (z=0.5)
+		6, 7, 8, 8, 10, 11,
+		// 左面 (x=-0.5)
+		12, 13, 14, 14, 16, 17,
+		// 右面 (x=0.5)
+		18, 19, 20, 20, 22, 23,
+		// 下面 (y=-0.5)
+		24, 25, 26, 26, 28, 29,
+		// 上面 (y=0.5)
+		30, 31, 32, 32, 34, 35
 	};
 
-
+	// 2. 创建EBO
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -579,6 +641,8 @@ int main(int argc, char* args[]) {
 
 
 	glEnable(GL_DEPTH_TEST);//开启深度测试
+
+	
 
 	glBindVertexArray(0);//解绑vao，确定当前vbo状态并锁定VAO配置
 
@@ -623,18 +687,20 @@ int main(int argc, char* args[]) {
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBOID);//绑定VBO（数据已存在，无需再次上传）
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+
+	//glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	//glEnableVertexAttribArray(3);
+	//光源立方体只需要位置属性即可
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);//绑定EBO（数据已存在，无需再次上传）
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);//传入索引数据
 
-	// 设置矩阵
-	cubeShader.setMat4("model" , model);
-	cubeShader.setMat4("view", view);
-	cubeShader.setMat4("projection", projection);
+	//// 设置矩阵
+	//lightShader.setMat4("model" , model);
+	//lightShader.setMat4("view", view);
+	//lightShader.setMat4("projection", projection);
 	
 	glBindVertexArray(0);//解绑light vao
 
@@ -668,6 +734,7 @@ int main(int argc, char* args[]) {
 	glfwSetCursorPosCallback(window, mouse_callback);
 	while (!glfwWindowShouldClose(window))
 	{	
+		//glm::vec3 lightColor(1.0f * sin(glfwGetTime()), 1.0f, 1.0f * cos(glfwGetTime()));
 
 		glm::vec3 front;
 		front.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
@@ -711,7 +778,22 @@ int main(int argc, char* args[]) {
 		cubeShader.setMat4("model", model);
 		cubeShader.setMat4("view", view);
 		cubeShader.setMat4("projection", projection);
+		//cubeShader.setVec3("color_offset", glm::vec3(0.9f, 0.2f, 0.0f));//设置颜色偏移量(由于传入的顶点数据不含颜色数据，所以此项决定了物体颜色)
 
+		cubeShader.setVec3("lightPos", lightPos);//设置光源位置
+		cubeShader.setVec3("viewPos", cameraPos);//设置观察位置
+		//cubeShader.setVec3("lightColor", glm::vec3(1.0f));//设置光源颜色
+
+		//由于物体（material）本身不发光，其颜色完全依赖于光照，因此物体颜色通常通过材质属性来定义，而不是直接设置一个固定的颜色值。
+		cubeShader.setVec3("material.ambientReflectance", 1.0f, 0.5f, 0.31f);//设置主立方体材质属性 环境光反射系数（物体对环境光的反射能力）
+		cubeShader.setVec3("material.diffuseReflectance", 1.0f, 0.5f, 0.31f);//设置主立方体材质属性 漫反射系数（物体对直射光的颜色和强度）决定物体的主色调（如红色物体吸收蓝绿光，反射红光）。
+		cubeShader.setVec3("material.specularReflectance", 0.5f, 0.5f, 0.5f);//设置主立方体材质属性 镜面反射系数（高光的颜色和强度） 通常与物体材质的真实颜色无关（如金属的高光颜色接近金属本身，塑料的高光多为白色）。
+		cubeShader.setFloat("material.shininess", 32.0f);//设置主立方体材质属性 高光锐度（控制高光的集中程度，值越大越尖锐）
+
+		cubeShader.setVec3("light.position", lightPos);// 设置光源位置
+		cubeShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);// 设置光源的环境强度
+		cubeShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f); // 设置光源的漫反射强度
+		cubeShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);// 设置光源的镜面反射强度
 
 		glm::mat4 trans = glm::mat4(1.0f);
 		//旋转角为 rota 第二个参数为旋转轴，绕y轴旋转
@@ -761,6 +843,8 @@ int main(int argc, char* args[]) {
 		
 		
 		glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
+		//glDrawArrays(GL_TRIANGLE_STRIP, 0, verticesCount);
+		
 		//checkOpenGLError();
 
 		lightShader.use();//激活light程序
@@ -771,13 +855,17 @@ int main(int argc, char* args[]) {
 		lightShader.setMat4("model", model);
 		lightShader.setMat4("view", view);
 		lightShader.setMat4("projection", projection);
+		lightShader.setVec3("color_offset", glm::vec3(1.0f));//设置颜色偏移量(由于传入的顶点数据不含颜色数据，所以此项决定了物体颜色)
 		
+
+		lightPos = glm::vec3(3.0f * sin(glfwGetTime()), 2.0f, 3.0f * cos(glfwGetTime()));//让光源围绕原点旋转
+
 		trans = glm::mat4(1.0f);
 		trans = glm::translate(trans, lightPos);//平移到light位置
 		trans = glm::scale(trans, glm::vec3(0.2f, 0.2f, 0.2f));//缩小
 		//glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));//更新light的transform矩阵
 		lightShader.setMat4("transform" , trans);//更新light的transform矩阵
-		checkOpenGLError();
+		//checkOpenGLError();
 		
 		glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
 

@@ -27,6 +27,12 @@ float cubeVerticesWithColor[] = {
 	 1.0f,  1.0f,  1.0f,  0.0f, 0.0f, 0.0f
 };
 
+//float cubeVerticesWithNormalVector[]{
+//
+//
+//
+//}
+
 
 float* getVertices(int& size, bool withColor = false) {
 	if (withColor) {

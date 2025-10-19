@@ -53,8 +53,9 @@ float cameraSensitivity = 1.0f;//视角移动灵敏度 角度/s
 
 float cameraSpeedBoost = 3.0f;//摄像机加速倍数
 
+glm::vec3 lightDefaultPos(2.2f, 1.0f, -2.0f);
 
-glm::vec3 lightPos(2.2f, 1.0f, -2.0f);
+glm::vec3 lightPos = lightDefaultPos;
 glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 
@@ -107,6 +108,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 
 //检查OpenGL是否错误的函数
+//已弃用
 bool checkOpenGLError() {
 	bool foundError = false;
 	int glErr = glGetError();
@@ -116,6 +118,44 @@ bool checkOpenGLError() {
 		glErr = glGetError();
 	}
 	return foundError;
+}
+
+unsigned int loadTexture(std::string path ) {
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
+	if (data)
+	{
+		GLenum format;
+		if (nrComponents == 1)//灰度图
+			format = GL_RED;
+		else if (nrComponents == 3)//RGB图
+			format = GL_RGB;
+		else if (nrComponents == 4)//RGBA图
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);// 生成纹理
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// 设置纹理环绕方式 此处为重复
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);// 设置纹理环绕方式 此处为重复
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);// 设置纹理过滤方式 此处为线性过滤 使用mipmap
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);// 设置纹理过滤方式 此处为线性过滤
+
+		stbi_image_free(data);
+	}
+	else
+	{	
+
+		log("Texture failed to load at path: "+ path);
+		stbi_image_free(data);
+	}
+
+	return textureID;// 返回纹理ID
+
 }
 
 
@@ -349,48 +389,49 @@ int main(int argc, char* args[]) {
 		-1.0f, -1.0f,  1.0f,  1.0f, 0.0f, 1.0f,  0.0f, 1.0f   // 左下前 23
 	};
 
-	float vertices[] = {// 带法线的立方体顶点数据
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	float vertices[] = {// 附带法线以及纹理坐标的立方体顶点数据
+		// positions          // normals           // texture coords
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
 
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
 
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
 
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 	};
 
 	float vertices2[] = {
@@ -437,65 +478,8 @@ int main(int argc, char* args[]) {
 	glBindBuffer(GL_ARRAY_BUFFER, VBOID);//通过id启动VBO
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //传入顶点数据
 
-	Shader cubeShader("src/Shaders/shader.vs", "src/Shaders/shader.fs");  // 立方体着色器（顶点+片段）
-	Shader lightShader("src/Shaders/shader.vs" ,"src/Shaders/lightShader.fs");                     // 光源着色器（片段）
-	//unsigned int vertexShaderID = glCreateShader(GL_VERTEX_SHADER);//创建顶点着色器id
-
-	//std::string source;
-	//readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/shader.vs", &source);
-	//const char* vertexShaderSource = source.c_str();
-
-	////                 着色器id  源码数量  源码字符串地址   未知
-	//glShaderSource(vertexShaderID, 1, &vertexShaderSource, NULL);//传入顶点着色器源码 
-	//glCompileShader(vertexShaderID);//开始编译
-
-	//// 编译顶点着色器后检查
-	//int success;
-	//char infoLog[512];
-	//glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
-	//if (!success) {
-	//	glGetShaderInfoLog(vertexShaderID, 512, NULL, infoLog);
-	//	log("Vertex Shader Error: " + std::string(infoLog));
-	//}
-
-
-	////readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/lightShader.fs", &source);
-	//readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/shader.fs", &source);
-	////readStringFromFile("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Shaders/TextureShader.fs", &source);1
-	//unsigned int fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);//创建片段着色器id
-
-	//const char* fragmentShaderSource = source.c_str();
-	////                 着色器id  源码数量  源码字符串地址   未知
-	//glShaderSource(fragmentShaderID, 1, &fragmentShaderSource, NULL);//传入片段着色器源码 
-	//glCompileShader(fragmentShaderID);//开始编译
-
-	//// 编译片段着色器后检查
-	//glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
-	//if (!success) {
-	//	glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
-	//	log("Fragment Shader Error: " + std::string(infoLog));
-	//}
-
-	//unsigned int shaderProgram;
-	//shaderProgram = glCreateProgram();
-
-
-
-
-	//glAttachShader(shaderProgram, vertexShaderID);// 将顶点着色器附加到着色器程序
-	//glAttachShader(shaderProgram, fragmentShaderID);// 将片段着色器附加到着色器程序
-	//glLinkProgram(shaderProgram);// 链接所有附加的着色器，生成最终可执行程序
-
-	//// 链接着色器程序后检查
-	//glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	//if (!success) {
-	//	glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-	//	log("Shader Program Link Error: " + std::string(infoLog));
-	//}
-	//
-	
-	
-
+	Shader cubeShader("src/Shaders/shader.vs", "src/Shaders/TextureShader.fs");  // 立方体着色器（顶点+片段）
+	Shader lightShader("src/Shaders/shader.vs" ,"src/Shaders/lightShader.fs");                     // 光源着色器（片段）	
 
 	unsigned int VAOID;
 	glGenVertexArrays(1, &VAOID);
@@ -512,46 +496,8 @@ int main(int argc, char* args[]) {
 
 
 	//纹理操作
-	//unsigned int textureID;
-	//glGenTextures(1, &textureID);
-
-	//glBindTexture(GL_TEXTURE_2D, textureID);
-
-	//// 为当前绑定的纹理对象设置环绕、过滤方式
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	//stbi_set_flip_vertically_on_load(true);//需翻转 Y 轴（OpenGL纹理坐标系与图片默认方向相反）!!!!!!!!!!!!
-	//// 加载并生成纹理
-	//int width, height, nrChannels;
-	//unsigned char* data = stbi_load("G:/Docs/Visual Studio 2022/Projects/OpenGl/OpenGl/src/Textures/test.png", &width, &height, &nrChannels, 0);
-
-	//if (data) {
-	//	/*
-	//	void glTexImage2D(
-	//		GLenum target,       // 1. 纹理目标（绑定的是哪种纹理）
-	//		GLint level,         // 2. Mipmap 级别（当前上传的是第几层纹理）
-	//		GLint internalFormat,// 3. GPU 内部存储的纹理格式（如何压缩/存储像素）
-	//		GLsizei width,       // 4. 纹理的像素宽度
-	//		GLsizei height,      // 5. 纹理的像素高度
-	//		GLint border,        // 6. 纹理边框宽度（现代OpenGL固定为0）​​现代OpenGL中必须传0​​，因为边框功能已被废弃。
-	//		GLenum format,       // 7. 上传数据的“通道布局”（原始数据的格式）
-	//		GLenum type,         // 8. 上传数据的“像素类型”（每个通道的字节大小）
-	//		const void *data     // 9. 原始像素数据的指针（比如stbi_load返回的数组）
-	//	);
-	//	*/
-	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	//	glGenerateMipmap(GL_TEXTURE_2D);
-	//	log("Texture has been loaded.");
-	//}
-	//else
-	//{
-	//	log("Failed to load texture!!");
-	//}
-
-	//stbi_image_free(data);//free
+	unsigned int textureID = loadTexture("src/Textures/container2.png");//材质贴图
+	unsigned int textureSpecularID = loadTexture("src/Textures/container2_specular.png");//高光贴图
 
 
 
@@ -559,11 +505,14 @@ int main(int argc, char* args[]) {
 	//vbo的最后修改工作
 
 		// 3. 设置顶点属性指针
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));//法线属性
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));//纹理坐标属性
+	glEnableVertexAttribArray(2);
+
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));//法线属性
 	glEnableVertexAttribArray(3);
 
 	//glVertexAttribPointer(
@@ -616,25 +565,36 @@ int main(int argc, char* args[]) {
 	//};
 
 	unsigned int indices[] = {
-		// 前面 (z=-0.5)
-		0, 1, 2, 2, 4, 5,
-		// 后面 (z=0.5)
-		6, 7, 8, 8, 10, 11,
-		// 左面 (x=-0.5)
-		12, 13, 14, 14, 16, 17,
-		// 右面 (x=0.5)
-		18, 19, 20, 20, 22, 23,
-		// 下面 (y=-0.5)
-		24, 25, 26, 26, 28, 29,
-		// 上面 (y=0.5)
-		30, 31, 32, 32, 34, 35
+		// 前面（每个面由2个三角形组成）
+			0, 1, 2,   // 第一个三角形
+			3, 4, 5,   // 第二个三角形（注意：原始数据中第3/4个顶点是重复的）
+
+			// 后面
+			6, 7, 8,
+			9, 10, 11,
+
+			// 左面
+			12, 13, 14,
+			15, 16, 17,
+
+			// 右面
+			18, 19, 20,
+			21, 22, 23,
+
+			// 下面
+			24, 25, 26,
+			27, 28, 29,
+
+			// 上面
+			30, 31, 32,
+			33, 34, 35
 	};
 
 	// 2. 创建EBO
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 
 
@@ -687,7 +647,7 @@ int main(int argc, char* args[]) {
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBOID);//绑定VBO（数据已存在，无需再次上传）
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	//glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -695,7 +655,7 @@ int main(int argc, char* args[]) {
 	//光源立方体只需要位置属性即可
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);//绑定EBO（数据已存在，无需再次上传）
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);//传入索引数据
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);//传入索引数据
 
 	//// 设置矩阵
 	//lightShader.setMat4("model" , model);
@@ -785,14 +745,17 @@ int main(int argc, char* args[]) {
 		//cubeShader.setVec3("lightColor", glm::vec3(1.0f));//设置光源颜色
 
 		//由于物体（material）本身不发光，其颜色完全依赖于光照，因此物体颜色通常通过材质属性来定义，而不是直接设置一个固定的颜色值。
-		cubeShader.setVec3("material.ambientReflectance", 1.0f, 0.5f, 0.31f);//设置主立方体材质属性 环境光反射系数（物体对环境光的反射能力）
-		cubeShader.setVec3("material.diffuseReflectance", 1.0f, 0.5f, 0.31f);//设置主立方体材质属性 漫反射系数（物体对直射光的颜色和强度）决定物体的主色调（如红色物体吸收蓝绿光，反射红光）。
-		cubeShader.setVec3("material.specularReflectance", 0.5f, 0.5f, 0.5f);//设置主立方体材质属性 镜面反射系数（高光的颜色和强度） 通常与物体材质的真实颜色无关（如金属的高光颜色接近金属本身，塑料的高光多为白色）。
-		cubeShader.setFloat("material.shininess", 32.0f);//设置主立方体材质属性 高光锐度（控制高光的集中程度，值越大越尖锐）
+		//cubeShader.setVec3("material.ambientReflectance", 1.0f, 0.5f, 0.31f);//设置主立方体材质属性 环境光反射系数（物体对环境光的反射能力）
+
+		cubeShader.setInt("material.diffuseTextureID", 0);//设置漫反射贴图采样器为纹理单元0
+		cubeShader.setInt("material.specularTextureID", 1);//设置高光贴图采样器为纹理单元1
+		//cubeShader.setVec3("material.diffuseReflectance", 1.0f, 0.5f, 0.31f);//设置主立方体材质属性 漫反射系数（物体对直射光的颜色和强度）决定物体的主色调（如红色物体吸收蓝绿光，反射红光）。
+		//cubeShader.setVec3("material.specularReflectance", 0.5f, 0.5f, 0.5f);//设置主立方体材质属性 镜面反射系数（高光的颜色和强度） 通常与物体材质的真实颜色无关（如金属的高光颜色接近金属本身，塑料的高光多为白色）。
+		cubeShader.setFloat("material.shininess", 16.0f);//设置主立方体材质属性 高光锐度（控制高光的集中程度，值越大越尖锐）
 
 		cubeShader.setVec3("light.position", lightPos);// 设置光源位置
-		cubeShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);// 设置光源的环境强度
-		cubeShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f); // 设置光源的漫反射强度
+		cubeShader.setVec3("light.ambient", 0.3f, 0.3f, 0.3f);// 设置光源的环境强度
+		cubeShader.setVec3("light.diffuse", 0.7f, 0.7f, 0.7f); // 设置光源的漫反射强度
 		cubeShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);// 设置光源的镜面反射强度
 
 		glm::mat4 trans = glm::mat4(1.0f);
@@ -811,8 +774,11 @@ int main(int argc, char* args[]) {
 
 		
 		// 绑定纹理
-		/*glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureID);*/
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textureSpecularID);
 
 
 		// 绑定VAO（解锁VAO配置，并从中读取所有顶点属性配置）
@@ -840,9 +806,9 @@ int main(int argc, char* args[]) {
 
 		//glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
 
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 		
-		
-		glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
+		//glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, verticesCount);
 		
 		//checkOpenGLError();
@@ -858,7 +824,7 @@ int main(int argc, char* args[]) {
 		lightShader.setVec3("color_offset", glm::vec3(1.0f));//设置颜色偏移量(由于传入的顶点数据不含颜色数据，所以此项决定了物体颜色)
 		
 
-		lightPos = glm::vec3(3.0f * sin(glfwGetTime()), 2.0f, 3.0f * cos(glfwGetTime()));//让光源围绕原点旋转
+		lightPos = glm::vec3(lightDefaultPos.x * sin(glfwGetTime()), lightDefaultPos.y, lightDefaultPos.z * cos(glfwGetTime()));//让光源围绕原点旋转
 
 		trans = glm::mat4(1.0f);
 		trans = glm::translate(trans, lightPos);//平移到light位置
@@ -867,8 +833,8 @@ int main(int argc, char* args[]) {
 		lightShader.setMat4("transform" , trans);//更新light的transform矩阵
 		//checkOpenGLError();
 		
-		glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
-
+		//glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 		
 		//float renderTime = glfwGetTime() - frameStartTime;
 		//Sleep(delay - renderTime * 1000);//延时，控制帧率

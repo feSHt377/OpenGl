@@ -156,7 +156,7 @@ vec3 CalcSpotLight(spotLight light, vec3 normal, vec3 fragPos, vec3 viewDir){//�
 
     float cutOff = cos(radians(light.cutOff));
     float outerCutOff = cos(radians(light.outerCutOff));
-    if(theta > cutOff ) {//光线在聚光灯范围内 cos值越大角越小，theta只有在小于cutOff
+    if(theta > outerCutOff ) {//光线在聚光灯范围内 cos值越大角越小，theta只有在小于cutOff
     //函数内联判断聚光灯范围
         // 漫反射着色
         float diff = max(dot(normal, lightDir), 0.0);

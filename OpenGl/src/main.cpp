@@ -62,8 +62,8 @@ glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 glm::vec3 defaultDirectionalLightDir(-0.2f, -1.0f, -0.3f);//方向（平行）光默认方向 我们将方向定义为从光源出发的方向，你可以很容易看到光的方向朝下
 
-float defaultSpotLightCutOff = 15.0f;//聚光灯默认内切角
-float defaultSpotLightOuterCutOff = 18.0f;//聚光灯默认外切角
+float defaultSpotLightCutOff = 12.5f;//聚光灯默认内切角
+float defaultSpotLightOuterCutOff = 17.5f;//聚光灯默认外切角
 bool spotLightOn = false;//聚光灯开关
 float spotLightCd = 0.2f;//聚光灯开关cd ,期间不可操作开关
 float spotLightLastToggleTime = 0.0f;//聚光灯上次切换时间
@@ -851,21 +851,21 @@ int main(int argc, char* args[]) {
 		//绘制材质三角形
 		//glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
-		//for (unsigned int i = 0; i < 10; i++)
-		//{
-		//	glm::mat4 model = glm::mat4(1.0f);
-		//	model = glm::translate(model, cubePositions[i]);
-		//	float angle = 20.0f * i;
-		//	model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-		//	cubeShader.setMat4("model", model);
-		//	glDrawArrays(GL_TRIANGLES, 0, 36);
+		for (unsigned int i = 0; i < 10; i++)
+		{
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			cubeShader.setMat4("model", model);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		//	//glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
-		//}
+			//glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
+		}
 
 		//glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
 
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		//glDrawArrays(GL_TRIANGLES, 0, 36);
 		
 		//glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, verticesCount);

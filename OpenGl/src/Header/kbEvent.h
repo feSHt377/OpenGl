@@ -33,6 +33,9 @@ void processInput(GLFWwindow* window)
 	keyStatus[GLFW_KEY_DELETE] = glfwGetKey(window, GLFW_KEY_DELETE);
 	keyStatus[GLFW_KEY_CAPS_LOCK] = glfwGetKey(window, GLFW_KEY_CAPS_LOCK);
 	keyStatus[GLFW_KEY_1] = glfwGetKey(window, GLFW_KEY_1);
+	keyStatus[GLFW_KEY_KP_8] = glfwGetKey(window, GLFW_KEY_KP_8);
+	keyStatus[GLFW_KEY_KP_2] = glfwGetKey(window, GLFW_KEY_KP_2);
+	keyStatus[GLFW_KEY_F] = glfwGetKey(window, GLFW_KEY_F);
 }
 
 /*
@@ -40,6 +43,8 @@ int checkKeyStatus(int key_enum) {
 	return keyStatus[key_enum];
 }
 */
+
+
 
 
 bool isKeyPressing(int key_enum) {

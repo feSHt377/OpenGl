@@ -96,12 +96,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>F:\VSlibs\Dependencies\include;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\VSlibs\Dependencies\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>G:\VSlibs\Dependencies\include;F:\VSlibs\Dependencies\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\VSlibs\Dependencies\lib;$(LibraryPath);G:\VSlibs\Dependencies\lib</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>G:\VSlibs\Dependencies\include;$(IncludePath)</IncludePath>
-    <LibraryPath>G:\VSlibs\Dependencies\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>G:\VSlibs\Dependencies\include;G:\VSlibs\Dependencies\include;$(IncludePath)</IncludePath>
+    <LibraryPath>G:\VSlibs\Dependencies\lib;$(LibraryPath);G:\VSlibs\Dependencies\lib</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

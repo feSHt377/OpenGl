@@ -60,7 +60,17 @@ glm::vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 
 
+glm::vec3 defaultDirectionalLightDir(-0.2f, -1.0f, -0.3f);//方向（平行）光默认方向 我们将方向定义为从光源出发的方向，你可以很容易看到光的方向朝下
 
+float defaultSpotLightCutOff = 15.0f;//聚光灯默认内切角
+float defaultSpotLightOuterCutOff = 18.0f;//聚光灯默认外切角
+bool spotLightOn = false;//聚光灯开关
+float spotLightCd = 0.2f;//聚光灯开关cd ,期间不可操作开关
+float spotLightLastToggleTime = 0.0f;//聚光灯上次切换时间
+
+
+float lightCubeSpeedBoost = 0.7f;//光源移动加速倍数
+float lightCubeRoteR = 1.0f;//光源绕Y轴旋转半径
 
 
 
@@ -325,6 +335,21 @@ void processCameraMove() {
 		pitch = -89.0f;
 	}
 
+	if (isKeyPressing(GLFW_KEY_KP_8)) {
+		lightCubeRoteR += 0.01f;
+		log("is key KP_8 pressing");
+	}
+
+	if (isKeyPressing(GLFW_KEY_KP_2)) {
+		lightCubeRoteR -= 0.01f;
+		log("is key KP_9 pressing");
+	}
+
+	if (isKeyPressing(GLFW_KEY_F) && glfwGetTime()-spotLightLastToggleTime > spotLightCd) {
+		spotLightOn = !spotLightOn;
+		log("is key F pressing , spotLightOn : " + std::to_string(spotLightOn));
+		spotLightLastToggleTime = glfwGetTime();
+	}
 }
 
 
@@ -622,7 +647,7 @@ int main(int argc, char* args[]) {
 	model = glm::rotate(model, 0.0f, glm::vec3(0.0f, 1.0f, 0.0f));//绕y轴旋转-55度
 
 	glm::mat4 view = glm::mat4(1.0f);//初始化单位矩阵
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));//沿z轴负方向平移5个单位（相当于移动摄像机到z轴正方向）
+	//view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));//沿z轴负方向平移5个单位（相当于移动摄像机到z轴正方向）
 
 	glm::mat4 projection = glm::mat4(1.0f);//初始化单位矩阵
 	projection = glm::perspective(glm::radians(45.0f), (float)screenWidth / (float)screenHeight, 0.1f, 100.0f);//透视投影矩阵
@@ -740,7 +765,7 @@ int main(int argc, char* args[]) {
 		cubeShader.setMat4("projection", projection);
 		//cubeShader.setVec3("color_offset", glm::vec3(0.9f, 0.2f, 0.0f));//设置颜色偏移量(由于传入的顶点数据不含颜色数据，所以此项决定了物体颜色)
 
-		cubeShader.setVec3("lightPos", lightPos);//设置光源位置
+
 		cubeShader.setVec3("viewPos", cameraPos);//设置观察位置
 		//cubeShader.setVec3("lightColor", glm::vec3(1.0f));//设置光源颜色
 
@@ -753,10 +778,43 @@ int main(int argc, char* args[]) {
 		//cubeShader.setVec3("material.specularReflectance", 0.5f, 0.5f, 0.5f);//设置主立方体材质属性 镜面反射系数（高光的颜色和强度） 通常与物体材质的真实颜色无关（如金属的高光颜色接近金属本身，塑料的高光多为白色）。
 		cubeShader.setFloat("material.shininess", 16.0f);//设置主立方体材质属性 高光锐度（控制高光的集中程度，值越大越尖锐）
 
-		cubeShader.setVec3("light.position", lightPos);// 设置光源位置
-		cubeShader.setVec3("light.ambient", 0.3f, 0.3f, 0.3f);// 设置光源的环境强度
-		cubeShader.setVec3("light.diffuse", 0.7f, 0.7f, 0.7f); // 设置光源的漫反射强度
-		cubeShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);// 设置光源的镜面反射强度
+
+		cubeShader.setVec3("pointlight[0].position", lightPos);// 设置光源位置
+		cubeShader.setVec3("pointlight[0].ambient", 0.3f, 0.3f, 0.3f);// 设置光源的环境强度
+		cubeShader.setVec3("pointlight[0].diffuse", 0.7f, 0.7f, 0.7f); // 设置光源的漫反射强度
+		cubeShader.setVec3("pointlight[0].specular", 1.0f, 1.0f, 1.0f);// 设置光源的镜面反射强度
+		cubeShader.setInt("pointlight[0].enabled", 1);//启用点光源0
+		//常数设置阶段
+		cubeShader.setFloat("pointlight[0].constant", 1.0f);// 设置光源的衰减常数项
+		cubeShader.setFloat("pointlight[0].linear", 0.09f);// 设置光源的线性衰减项
+		cubeShader.setFloat("pointlight[0].quadratic", 0.032f);// 设置光源的二次衰减项 
+		//此处的衰减系数为常用值，覆盖了50个单位的有效光照范围
+
+
+		cubeShader.setVec3("dirlight.direction", defaultDirectionalLightDir);//设置方向光方向
+		cubeShader.setVec3("dirlight.ambient", 0.2f, 0.2f, 0.2f);// 设置光源的环境强度
+		cubeShader.setVec3("dirlight.diffuse", 0.5f, 0.5f, 0.5f); // 设置光源的漫反射强度
+
+		if (spotLightOn) {//开启聚光灯
+
+			cubeShader.setVec3("spotlight.position", cameraPos);// 设置光源位置
+			cubeShader.setVec3("spotlight.direction", cameraFront);// 设置光源方向
+
+			cubeShader.setFloat("spotlight.cutOff", defaultSpotLightCutOff);// 设置光源的内切角
+			cubeShader.setFloat("spotlight.outerCutOff", defaultSpotLightOuterCutOff);// 设置光源的外切角
+
+			cubeShader.setVec3("spotlight.ambient", 0.3f, 0.3f, 0.3f);// 设置光源的环境强度
+			cubeShader.setVec3("spotlight.diffuse", 0.7f, 0.7f, 0.7f); // 设置光源的漫反射强度
+			cubeShader.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);// 设置光源的镜面反射强度
+			cubeShader.setInt("spotlight.enabled", 1);//启用聚光灯
+			//常数设置阶段
+			cubeShader.setFloat("spotlight.constant", 1.0f);// 设置光源的衰减常数项
+			cubeShader.setFloat("spotlight.linear", 0.09f);// 设置光源的线性衰减项
+			cubeShader.setFloat("spotlight.quadratic", 0.032f);// 设置光源的二次衰减项 
+		}
+		else {
+			cubeShader.setInt("spotlight.enabled", 0);//关闭聚光灯
+		}
 
 		glm::mat4 trans = glm::mat4(1.0f);
 		//旋转角为 rota 第二个参数为旋转轴，绕y轴旋转
@@ -799,9 +857,10 @@ int main(int argc, char* args[]) {
 		//	model = glm::translate(model, cubePositions[i]);
 		//	float angle = 20.0f * i;
 		//	model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-		//	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		//	cubeShader.setMat4("model", model);
+		//	glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		//	glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
+		//	//glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
 		//}
 
 		//glDrawElements(GL_TRIANGLES, eboS, GL_UNSIGNED_INT, 0); //eboS为索引数量
@@ -824,7 +883,7 @@ int main(int argc, char* args[]) {
 		lightShader.setVec3("color_offset", glm::vec3(1.0f));//设置颜色偏移量(由于传入的顶点数据不含颜色数据，所以此项决定了物体颜色)
 		
 
-		lightPos = glm::vec3(lightDefaultPos.x * sin(glfwGetTime()), lightDefaultPos.y, lightDefaultPos.z * cos(glfwGetTime()));//让光源围绕原点旋转
+		lightPos = glm::vec3(lightDefaultPos.x * sin(glfwGetTime()*lightCubeSpeedBoost) * lightCubeRoteR, lightDefaultPos.y, lightDefaultPos.z * cos(glfwGetTime() * lightCubeSpeedBoost )*lightCubeRoteR );//让光源围绕原点旋转
 
 		trans = glm::mat4(1.0f);
 		trans = glm::translate(trans, lightPos);//平移到light位置

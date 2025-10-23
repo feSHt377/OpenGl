@@ -56,22 +56,7 @@
     <None Include="src\Shaders\ModelShader.vs" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="src\Textures\sample.jpg">
-      <Filter>资源文件</Filter>
-    </Image>
-    <Image Include="src\Textures\666.png">
-      <Filter>资源文件</Filter>
-    </Image>
     <Image Include="src\Textures\test.jpg">
-      <Filter>资源文件</Filter>
-    </Image>
-    <Image Include="src\Textures\test.png">
-      <Filter>资源文件</Filter>
-    </Image>
-    <Image Include="src\Textures\container2.png">
-      <Filter>资源文件</Filter>
-    </Image>
-    <Image Include="src\Textures\container2_specular.png">
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="src\Textures\3D\ao.jpg">

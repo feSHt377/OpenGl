@@ -52,7 +52,7 @@ float pitch = 0.0f;//俯仰角
 float yaw = -90.0f;//偏航角
 
 float cameraSpeed = 2.0f; //摄像机移动速度 单位/s
-float cameraSensitivity = 50.0f;//视角移动灵敏度 角度/s
+float cameraSensitivity = 1.0f;//视角移动灵敏度 角度/s
 
 float cameraSpeedBoost = 3.0f;//摄像机加速倍数
 

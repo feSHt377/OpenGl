@@ -47,12 +47,7 @@
     <Image Include="src\Textures\3D\normal.png" />
     <Image Include="src\Textures\3D\roughness.jpg" />
     <Image Include="src\Textures\3D\specular.jpg" />
-    <Image Include="src\Textures\666.png" />
-    <Image Include="src\Textures\container2.png" />
-    <Image Include="src\Textures\container2_specular.png" />
-    <Image Include="src\Textures\sample.jpg" />
     <Image Include="src\Textures\test.jpg" />
-    <Image Include="src\Textures\test.png" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\Textures\3D\source_attribution.txt" />

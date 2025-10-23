@@ -26,9 +26,6 @@
     <ClInclude Include="src\Header\file.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\Header\stb_image.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\Header\kbEvent.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -38,6 +35,15 @@
     <ClInclude Include="src\Header\presetVertices.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\Header\Mesh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Header\Model.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Header\stb_image.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Shaders\main.glsl" />
@@ -45,6 +51,9 @@
     <None Include="src\Shaders\shader.fs" />
     <None Include="src\Shaders\shader.vs" />
     <None Include="src\Shaders\TextureShader.fs" />
+    <None Include="src\Textures\3D\backpack.mtl" />
+    <None Include="src\Shaders\ModelShader.fs" />
+    <None Include="src\Shaders\ModelShader.vs" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="src\Textures\sample.jpg">
@@ -62,5 +71,26 @@
     <Image Include="src\Textures\container2.png">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="src\Textures\container2_specular.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="src\Textures\3D\ao.jpg">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="src\Textures\3D\diffuse.jpg">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="src\Textures\3D\normal.png">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="src\Textures\3D\roughness.jpg">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="src\Textures\3D\specular.jpg">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\Textures\3D\source_attribution.txt" />
   </ItemGroup>
 </Project>

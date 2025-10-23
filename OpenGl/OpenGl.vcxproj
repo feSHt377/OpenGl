@@ -25,6 +25,8 @@
   <ItemGroup>
     <ClInclude Include="src\Header\file.h" />
     <ClInclude Include="src\Header\kbEvent.h" />
+    <ClInclude Include="src\Header\Mesh.h" />
+    <ClInclude Include="src\Header\Model.h" />
     <ClInclude Include="src\Header\presetVertices.h" />
     <ClInclude Include="src\Header\Shader.h" />
     <ClInclude Include="src\Header\stb_image.h" />
@@ -32,16 +34,28 @@
   <ItemGroup>
     <None Include="src\Shaders\lightShader.fs" />
     <None Include="src\Shaders\main.glsl" />
+    <None Include="src\Shaders\ModelShader.fs" />
+    <None Include="src\Shaders\ModelShader.vs" />
     <None Include="src\Shaders\shader.fs" />
     <None Include="src\Shaders\shader.vs" />
     <None Include="src\Shaders\TextureShader.fs" />
+    <None Include="src\Textures\3D\backpack.mtl" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="src\Textures\3D\ao.jpg" />
+    <Image Include="src\Textures\3D\diffuse.jpg" />
+    <Image Include="src\Textures\3D\normal.png" />
+    <Image Include="src\Textures\3D\roughness.jpg" />
+    <Image Include="src\Textures\3D\specular.jpg" />
     <Image Include="src\Textures\666.png" />
     <Image Include="src\Textures\container2.png" />
+    <Image Include="src\Textures\container2_specular.png" />
     <Image Include="src\Textures\sample.jpg" />
     <Image Include="src\Textures\test.jpg" />
     <Image Include="src\Textures\test.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\Textures\3D\source_attribution.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -140,7 +154,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -156,10 +170,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>

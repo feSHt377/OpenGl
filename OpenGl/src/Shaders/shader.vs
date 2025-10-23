@@ -6,7 +6,7 @@ layout (location = 2) in vec2 aTexCoord;
 layout (location = 3) in vec3 aNormal;//法线向量
 
 uniform vec3 Pos_offset; //统一变量，记录顶点偏移
-uniform vec3 color_offset; //统一变量，记录颜色偏移'
+uniform vec3 color_offset; //统一变量，记录颜色偏移 "
 
 
 uniform mat4 transform;//变换矩阵
